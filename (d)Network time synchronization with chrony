@@ -1,0 +1,72 @@
+5.(d) Network Time Synchronization with Chrony on Fedora
+
+This guide explains how to configure **Chrony** for NTP on Fedora using a **local custom NTP server** or other sources.
+Chrony is preferred over the older `ntpd` service for modern Fedora installations.
+
+1. Install Chrony
+sudo dnf install chrony -y
+ 
+chrony provides chronyd (service) and chronyc (command-line client)
+-y automatically confirms installation prompts
+
+2. Chrony Configuration File
+The main configuration file is /etc/chrony.conf. Here is an example configuration using a local NTP server:
+# Using a local custom NTP server
+server 127.127.1.0 iburst
+
+# Use NTP servers from DHCP (keep as is)
+sourcedir /run/chrony-dhcp
+
+# Record system clock drift
+driftfile /var/lib/chrony/drift
+
+# Allow system clock adjustment for offsets >1s in first 3 updates
+makestep 1.0 3
+
+# Enable kernel synchronization of RTC
+rtcsync
+
+# Directory for NTS keys and cookies
+ntsdumpdir /var/lib/chrony
+
+# Leap second handling
+leapseclist /usr/share/zoneinfo/leap-seconds.list
+
+# Directory for log files
+logdir /var/log/chrony
+
+You can uncomment or modify options like allow for client access, authselectmode for authentication, and hwtimestamp for advanced network
+interfaces if needed.
+
+3. Start and Enable Chrony Service
+sudo systemctl start chronyd
+sudo systemctl enable chronyd
+Starts Chrony immediately and ensures it runs at boot
+
+4. Open Firewall for NTP
+sudo firewall-cmd --permanent --add-service=ntp
+sudo firewall-cmd --reload
+Allows NTP traffic through firewall
+
+5. Verify Chrony Status
+sudo systemctl status chronyd
+chronyc tracking
+chronyc sources
+
+chronyc tracking → shows offset, frequency, and error
+chronyc sources → shows configured NTP servers and their synchronization status
+
+6. Timezone Configuration
+Make sure your system timezone is correct:
+timedatectl set-timezone Africa/Nairobi
+
+7. Monitoring and Maintenance
+Monitor logs: /var/log/chrony
+
+Regularly update Fedora and Chrony for security patches:
+sudo dnf update chrony -y
+
+
+Optional: For advanced security, implement symmetric keys or use NTPSec if required
+timedatectl status
+Replace Africa/Nairobi with your local timezone
