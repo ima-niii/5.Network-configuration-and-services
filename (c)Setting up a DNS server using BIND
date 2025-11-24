@@ -1,0 +1,94 @@
+ 5.(c) Setting up a DNS Server using BIND on Fedora Server
+
+BIND (Berkeley Internet Name Domain) is a popular DNS server software. This guide explains how to configure a DNS server on Fedora using BIND.
+
+ 1. Pre-requisites
+- Ensure your server has a **static IP address**: `192.168.193.128`  
+- Install BIND:
+sudo dnf install bind -y
+
+2. BIND Configuration Files
+Main configuration: /etc/named.conf
+Zone files: /var/named/
+
+Edit /etc/named.conf:
+sudo nano /etc/named.conf
+
+Set the IP your server listens on:
+options {
+    listen-on port 53 { 192.168.193.128; };
+    allow-query { 192.168.193.0/24; };
+};
+
+listen-on → the IP address of your DNS server
+allow-query → allows queries from your local network
+
+3. Configure Zones
+Example zone definition in /etc/named.conf:
+zone "imani.test" {
+    type master;
+    file "/var/named/imani.test.zone";
+};
+
+type master → this server is the primary authority for the zone
+file → path to the zone file
+
+4. Create Zone Files
+Create the zone file corresponding to your domain:
+sudo nano /var/named/imani.test.zone
+Example zone file for imani.test:
+dns
+Copy code
+$TTL 86400 
+@   IN  SOA imani.test. admin.imani.test. (
+        2025111301  ; Serial
+        3600        ; Refresh
+        1800        ; Retry
+        1209600     ; Expire
+        86400       ; Minimum TTL
+)
+
+; Name servers
+@   IN  NS  ns1.imani.test.
+
+; A records
+ns1     IN  A   192.168.193.128
+server  IN  A   192.168.193.128
+
+Explanation:
+SOA record → specifies the primary DNS server and contact email (admin.imani.test.)
+NS record → nameserver for the domain
+A records → map hostnames (ns1 and server) to IP addresses
+
+5. Check Configuration
+Validate BIND configuration for syntax errors:
+sudo named-checkconf /etc/named.conf
+
+Any errors will be displayed in the terminal
+
+6. Start and Enable BIND
+sudo systemctl start named
+sudo systemctl enable named
+
+start → starts the DNS service
+enable → ensures it starts at boot
+
+7. Firewall Configuration
+Allow DNS traffic:
+sudo firewall-cmd --add-service=dns --permanent
+sudo firewall-cmd --reload
+
+8. Testing DNS
+Use dig or nslookup from a client to test your DNS server:
+dig imani.test
+nslookup imani.test
+Verify the server responds with the correct IP addresses
+
+9. DNS Security and Maintenance
+Consider DNSSEC for protection against DNS attacks
+Regularly monitor logs (/var/log/messages or systemd journal)
+Keep BIND software up to date with security patches
+Back up zone files and configuration regularly
+Maintain documentation of zones, settings, and changes
+
+/etc/named.conf
